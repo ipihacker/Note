@@ -796,3 +796,339 @@ HAVING SUM(amount) > 100;
 | ----------- | ------------ |
 | A001        | 250          |
 | A002        | 200          |
+
+
+
+## 查询进阶
+
+### 1.关联查询
+
+#### cross join
+
+**概念**
+
+`ROSS JOIN` 是一种简单的关联查询，不需要任何条件来匹配行，它直接将左表的 **每一行** 与右表的 **每一行** 进行组合，返回的结果是两个表的笛卡尔积。
+
+**示例**
+
+假设有一个员工表 `employees`，包含以下字段：`emp_id`（员工编号）、`emp_name`（员工姓名）、`department`（所属部门）、`salary`（工资）。数据如下：
+
+| emp_id | emp_name | department | salary |
+| ------ | -------- | ---------- | ------ |
+| 1      | 小明     | 技术部     | 5000   |
+| 2      | 鸡哥     | 财务部     | 6000   |
+| 3      | 李华     | 销售部     | 4500   |
+
+假设还有一个部门表 `departments`，包含以下字段：`department`（部门名称）、`manager`（部门经理）、`location`（所在地）。数据如下：
+
+| department | manager | location |
+| ---------- | ------- | -------- |
+| 技术部     | 张三    | 上海     |
+| 财务部     | 李四    | 北京     |
+| 销售部     | 王五    | 广州     |
+
+使用 CROSS JOIN 进行关联查询，将员工表和部门表的所有行组合在一起，获取员工姓名、工资、部门名称和部门经理，示例 SQL 代码如下：
+
+```sql
+SELECT e.emp_name, e.salary, e.department, d.manager
+FROM employees e
+CROSS JOIN departments d;
+```
+
+注意，在多表关联查询的 SQL 中，我们最好在选择字段时指定字段所属表的名称（比如 e.emp_name），还可以通过给表起别名（比如 employees e）来简化 SQL 语句。
+
+查询结果：
+
+| emp_name | salary | department | manager |
+| -------- | ------ | ---------- | ------- |
+| 小明     | 5000   | 技术部     | 张三    |
+| 小明     | 5000   | 财务部     | 李四    |
+| 小明     | 5000   | 销售部     | 王五    |
+| 鸡哥     | 6000   | 技术部     | 张三    |
+| 鸡哥     | 6000   | 财务部     | 李四    |
+| 鸡哥     | 6000   | 销售部     | 王五    |
+| 李华     | 4500   | 技术部     | 张三    |
+| 李华     | 4500   | 财务部     | 李四    |
+| 李华     | 4500   | 销售部     | 王五    |
+
+#### inner join
+
+**概念**
+
+在 SQL 中，INNER JOIN 是一种常见的关联查询方式，它根据两个表之间的关联条件，将满足条件的行组合在一起。
+
+注意，INNER JOIN 只返回两个表中满足关联条件的交集部分，即在两个表中都存在的匹配行。
+
+**示例**
+
+假设有一个员工表 `employees`，包含以下字段：`emp_id`（员工编号）、`emp_name`（员工姓名）、`department`（所属部门）、`salary`（工资）。数据如下：
+
+| emp_id | emp_name | department | salary |
+| ------ | -------- | ---------- | ------ |
+| 1      | 小明     | 技术部     | 5000   |
+| 2      | 鸡哥     | 财务部     | 6000   |
+| 3      | 李华     | 销售部     | 4500   |
+
+假设还有一个部门表 `departments`，包含以下字段：`department`（部门名称）、`manager`（部门经理）、`location`（所在地）。数据如下：
+
+| department | manager | location |
+| ---------- | ------- | -------- |
+| 技术部     | 张三    | 上海     |
+| 财务部     | 李四    | 北京     |
+| 销售部     | 王五    | 广州     |
+| 摸鱼部     | 赵二    | 吐鲁番   |
+
+使用 INNER JOIN 进行关联查询，根据员工表和部门表之间的公共字段 `部门名称（department）` 进行匹配，将员工的姓名、工资以及所属部门和部门经理组合在一起：
+
+```sql
+SELECT e.emp_name, e.salary, e.department, d.manager
+FROM employees e
+JOIN departments d ON e.department = d.department;
+```
+
+查询结果如下：
+
+| emp_name | salary | department | manager |
+| -------- | ------ | ---------- | ------- |
+| 小明     | 5000   | 技术部     | 张三    |
+| 鸡哥     | 6000   | 财务部     | 李四    |
+| 李华     | 4500   | 销售部     | 王五    |
+
+我们会发现，使用 INNER_JOIN 后，只有两个表之间存在对应关系的数据才会被放到查询结果中。
+
+#### outer join
+
+**概念**
+
+在 SQL 中，OUTER JOIN 是一种关联查询方式，它根据指定的关联条件，将两个表中满足条件的行组合在一起，并 **包含没有匹配的行** 。
+
+在 OUTER JOIN 中，包括 LEFT OUTER JOIN 和 RIGHT OUTER JOIN 两种类型，它们分别表示查询左表和右表的所有行（即使没有被匹配），再加上满足条件的交集部分。
+
+**示例**
+
+假设有一个员工表 `employees`，包含以下字段：`emp_id`（员工编号）、`emp_name`（员工姓名）、`department`（所属部门）、`salary`（工资）。数据如下：
+
+| emp_id | emp_name | department | salary |
+| ------ | -------- | ---------- | ------ |
+| 1      | 小明     | 技术部     | 5000   |
+| 2      | 鸡哥     | 财务部     | 6000   |
+| 3      | 李华     | 销售部     | 4500   |
+
+假设还有一个部门表 `departments`，包含以下字段：`department`（部门名称）、`manager`（部门经理）、`location`（所在地）。数据如下：
+
+| department | manager | location |
+| ---------- | ------- | -------- |
+| 技术部     | 张三    | 上海     |
+| 财务部     | 李四    | 北京     |
+| 人事部     | 王五    | 广州     |
+| 摸鱼部     | 赵二    | 吐鲁番   |
+
+使用 LEFT JOIN 进行关联查询，根据员工表和部门表之间的部门名称进行匹配，将员工的姓名、工资以及所属部门和部门经理组合在一起，并包含所有员工的信息：
+
+```sql
+SELECT e.emp_name, e.salary, e.department, d.manager
+FROM employees e
+LEFT JOIN departments d ON e.department = d.department;
+```
+
+查询结果：
+
+| emp_name | salary | department | manager |
+| -------- | ------ | ---------- | ------- |
+| 小明     | 5000   | 技术部     | 张三    |
+| 鸡哥     | 6000   | 财务部     | 李四    |
+| 李华     | 4500   | 销售部     | NULL    |
+
+关注下表格的最后一条数据，李华所属的销售部并没有在部门表中，但仍然返回在了结果集中，manager 为 NULL。
+
+有些数据库并不支持 RIGHT JOIN 语法，那么如何实现 RIGHT JOIN 呢？
+
+其实只需要把主表（from 后面的表）和关联表（LEFT JOIN 后面的表）顺序进行调换即可！
+
+### 2.子查询
+
+**概念**
+
+子查询是指在一个查询语句内部 **嵌套** 另一个完整的查询语句，内层查询被称为子查询。子查询可以用于获取更复杂的查询结果或者用于过滤数据。
+
+当执行包含子查询的查询语句时，数据库引擎会首先执行子查询，然后将其结果作为条件或数据源来执行外层查询。
+
+**示例**
+
+假设我们有以下两个数据表：`orders` 和 `customers`，分别包含订单信息和客户信息。
+
+orders 表：
+
+| order_id | customer_id | order_date | total_amount |
+| -------- | ----------- | ---------- | ------------ |
+| 1        | 101         | 2023-01-01 | 200          |
+| 2        | 102         | 2023-01-05 | 350          |
+| 3        | 101         | 2023-01-10 | 120          |
+| 4        | 103         | 2023-01-15 | 500          |
+
+customers 表：
+
+| customer_id | name    | city        |
+| ----------- | ------- | ----------- |
+| 101         | Alice   | New York    |
+| 102         | Bob     | Los Angeles |
+| 103         | Charlie | Chicago     |
+
+现在，我们希望查询出订单总金额 > 200 的客户的姓名和他们的订单总金额，示例 SQL 如下：
+
+```sql
+-- 主查询
+SELECT name, total_amount
+FROM customers
+WHERE customer_id IN (
+    -- 子查询
+    SELECT DISTINCT customer_id
+    FROM orders
+    WHERE total_amount > 200
+);
+```
+
+在上述 SQL 中，先通过子查询从订单表中过滤查询出了符合条件的客户 id，然后再根据客户 id 到客户信息表中查询客户信息，这样可以少查询很多客户信息数据。
+
+上述语句的查询结果：
+
+| name    | total_amount |
+| ------- | ------------ |
+| Bob     | 350          |
+| Charlie | 500          |
+
+
+
+**特殊类型——exists**
+
+**概念**
+
+子查询中的一种特殊类型是 "exists" 子查询，用于检查主查询的结果集是否存在满足条件的记录，它返回布尔值（True 或 False），而不返回实际的数据。
+
+**示例**
+
+假设我们有以下两个数据表：`orders` 和 `customers`，分别包含订单信息和客户信息。
+
+orders 表：
+
+| order_id | customer_id | order_date | total_amount |
+| -------- | ----------- | ---------- | ------------ |
+| 1        | 101         | 2023-01-01 | 200          |
+| 2        | 102         | 2023-01-05 | 350          |
+| 3        | 101         | 2023-01-10 | 120          |
+| 4        | 103         | 2023-01-15 | 500          |
+
+customers 表：
+
+| customer_id | name    | city        |
+| ----------- | ------- | ----------- |
+| 101         | Alice   | New York    |
+| 102         | Bob     | Los Angeles |
+| 103         | Charlie | Chicago     |
+| 104         | 赵二    | China       |
+
+现在，我们希望查询出 **存在订单的** 客户姓名和订单金额。
+
+使用 exists 子查询的方式，SQL 代码如下：
+
+```sql
+-- 主查询
+SELECT name, total_amount
+FROM customers
+WHERE EXISTS (
+    -- 子查询
+    SELECT 1
+    FROM orders
+    WHERE orders.customer_id = customers.customer_id
+);
+```
+
+上述语句中，先遍历客户信息表的每一行，获取到客户编号；然后执行子查询，从订单表中查找该客户编号是否存在，如果存在则返回结果。
+
+查询结果如下：
+
+| name    | total_amount |
+| ------- | ------------ |
+| Alice   | 200          |
+| Bob     | 350          |
+| Charlie | 500          |
+
+和 exists 相对的是 not exists，用于查找不满足存在条件的记录。
+
+### 3.组合查询
+
+**概念**
+
+在 SQL 中，组合查询是一种将多个 SELECT 查询结果合并在一起的查询操作。
+
+包括两种常见的组合查询操作：UNION 和 UNION ALL。
+
+1. UNION 操作：它用于将两个或多个查询的结果集合并， **并去除重复的行** 。即如果两个查询的结果有相同的行，则只保留一行。
+2. UNION ALL 操作：它也用于将两个或多个查询的结果集合并， **但不去除重复的行** 。即如果两个查询的结果有相同的行，则全部保留。
+
+**示例**
+
+假设我们有以下两个数据表：`table1` 和 `table2`，分别包含不同部门的员工信息。
+
+table1 表：
+
+| emp_id | name    | age  | department |
+| ------ | ------- | ---- | ---------- |
+| 101    | Alice   | 25   | HR         |
+| 102    | Bob     | 28   | Finance    |
+| 103    | Charlie | 22   | IT         |
+
+table2 表：
+
+| emp_id | name  | age  | department |
+| ------ | ----- | ---- | ---------- |
+| 101    | Alice | 25   | HR         |
+| 201    | David | 27   | Finance    |
+| 202    | Eve   | 24   | HR         |
+| 203    | Frank | 26   | IT         |
+
+现在，我们想要合并这两张表的数据，分别执行 UNION 操作和 UNION ALL 操作。
+
+UNION 操作：
+
+```sql
+SELECT name, age, department
+FROM table1
+UNION
+SELECT name, age, department
+FROM table2;
+```
+
+UNION 操作的结果，去除了重复的行（名称为 Alice）：
+
+| name    | age  | department |
+| ------- | ---- | ---------- |
+| Alice   | 25   | HR         |
+| Bob     | 28   | Finance    |
+| Charlie | 22   | IT         |
+| David   | 27   | Finance    |
+| Eve     | 24   | HR         |
+| Frank   | 26   | IT         |
+
+UNION ALL 操作：
+
+```sql
+-- UNION ALL操作
+SELECT name, age, department
+FROM table1
+UNION ALL
+SELECT name, age, department
+FROM table2;
+```
+
+结果如下，保留了重复的行：
+
+| name    | age  | department |
+| ------- | ---- | ---------- |
+| Alice   | 25   | HR         |
+| Bob     | 28   | Finance    |
+| Charlie | 22   | IT         |
+| Alice   | 25   | HR         |
+| David   | 27   | Finance    |
+| Eve     | 24   | HR         |
+| Frank   | 26   | IT         |
